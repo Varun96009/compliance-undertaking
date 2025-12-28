@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Compliance Undertaking</title>
+
+  <!-- BASIC CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <h2>Compliance Undertaking</h2>
+
+  <div class="container">
+    <input
+      type="text"
+      id="date"
+      placeholder="01-01-2000"
+    >
+
+    <input
+      type="text"
+      id="month"
+      placeholder="Jan-2000"
+    >
+  </div>
+
+  <!-- DOWNLOAD BUTTON -->
+  <button id="downloadBtn" onclick="fillPDF()">
+    Download PDF
+  </button>
+
+  <!-- ================= IMPORTANT ORDER ================= -->
+
+  <!-- 1️⃣ PDF-LIB (PEHLE LOAD HONA CHAHIYE) -->
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+  <!-- 2️⃣ AAPKI SCRIPT (HAMESHA LAST) -->
+  <script src="script.js"></script>
+
+</body>
+</html>
