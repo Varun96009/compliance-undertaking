@@ -1,44 +1,71 @@
-async function fillPDF() {
-  const dateInput = document.getElementById("date").value.trim();
-  const monthInput = document.getElementById("month").value.trim();
+let processing = false;
 
-  // Validation
-  if (!dateInput || !monthInput) {
+async function fillPDF() {
+  if (processing) return;
+  processing = true;
+
+  const btn = document.getElementById("downloadBtn");
+  btn.disabled = true;
+  btn.innerText = "Generating PDF...";
+
+  const dateEl = document.getElementById("date");
+  const monthEl = document.getElementById("month");
+
+  dateEl.classList.remove("error");
+  monthEl.classList.remove("error");
+
+  if (!dateEl.value.trim() || !monthEl.value.trim()) {
+    if (!dateEl.value.trim()) dateEl.classList.add("error");
+    if (!monthEl.value.trim()) monthEl.classList.add("error");
     alert("Please fill Date and Month");
+    btn.disabled = false;
+    btn.innerText = "Download PDF";
+    processing = false;
     return;
   }
 
-  // Load PDF
-  const existingPdfBytes = await fetch("Compliance_Undertaking.pdf").then(res =>
-    res.arrayBuffer()
-  );
+  try {
+    const pdfBytes = await fetch("Compliance_Undertaking.pdf", { cache: "no-store" })
+      .then(r => r.arrayBuffer());
 
-  const { PDFDocument, StandardFonts } = PDFLib;
+    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+    const page = pdfDoc.getPages()[0];
+    const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
-  const pages = pdfDoc.getPages();
-  const page = pages[0];
+    /* ========= DATE (EXACT POSITION) ========= */
+    page.drawText(dateEl.value, {
+      x: 430,   // ← Date position (right side)
+      y: 705,
+      size: 11,
+      font,
+      color: PDFLib.rgb(0, 0, 0)
+    });
 
-  // Get full text content
-  const text = await pdfDoc.getForm();
+    /* ========= MONTH (EXACT POSITION) ========= */
+    page.drawText(monthEl.value, {
+      x: 260,   // ← Month position (paragraph line)
+      y: 575,
+      size: 11,
+      font,
+      color: PDFLib.rgb(0, 0, 0)
+    });
 
-  // Replace placeholders
-  const content = await pdfDoc.saveAsBase64({ dataUri: false });
+    const finalPdf = await pdfDoc.save();
+    const blob = new Blob([finalPdf], { type: "application/pdf" });
 
-  let finalText = content
-    .replace("{{DATE}}", dateInput)
-    .replace("{{MONTH}}", monthInput);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Compliance_Undertaking_Final.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 
-  const newPdf = await PDFDocument.load(
-    Uint8Array.from(atob(finalText), c => c.charCodeAt(0))
-  );
-
-  const pdfBytes = await newPdf.save();
-
-  // Download
-  const blob = new Blob([pdfBytes], { type: "application/pdf" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "Compliance_Undertaking_Final.pdf";
-  link.click();
+  } catch (e) {
+    alert("PDF generate error");
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "Download PDF";
+    processing = false;
+  }
 }
